@@ -1,0 +1,27 @@
+name: Deploy TramaSul - Homologação
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: Publicar na EC2 de Homologação
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Atualizar aplicação na EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST_HOMOLOG }}
+          username: ${{ secrets.EC2_USER_HOMOLOG }}
+          key: ${{ secrets.EC2_SSH_KEY_HOMOLOG }}
+          script: |
+            cd ~/Textil_Vestuario
+            git fetch origin develop
+            git checkout -B develop origin/develop
+            sudo docker build -t tramasul-textil-homologacao .
+            sudo docker rm -f tramasul-homologacao || true
+            sudo docker run -d --restart unless-stopped --name tramasul-homologacao -p 8080:80 tramasul-textil-homologacao
+            sudo docker ps
